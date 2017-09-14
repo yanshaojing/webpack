@@ -3,7 +3,8 @@ const webpack = require('webpack')
 const baseConfigs = require('./webpack.base.config')
 
 module.exports = (env) => {
-  const PORT = env.port || 8080
+  const port = env.port || 8080
+  const setup = require('./webpack.mock.config')(env)
   const HTML_PATH = path.join(__dirname, '../public')
   const { plugins, module, ...otherConfigs } = baseConfigs
   const defaultOptions = {
@@ -20,7 +21,8 @@ module.exports = (env) => {
      * https://webpack.js.org/configuration/dev-server/
      */
     devServer: {
-      port: PORT,
+      port,
+      setup,
       hot: true,
       noInfo: true,
       overlay: true,
