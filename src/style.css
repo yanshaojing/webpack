@@ -1,0 +1,17 @@
+h1 {
+  padding: 0 6px;
+}
+p {
+  padding: 6px;
+  color: #FFFFFF;
+  font-size: 14px;
+}
+.css {
+  border: 10px solid #bdc3c7;
+}
+.text {
+  padding: 6px;
+  background: #34495e;
+  color: #FFFFFF;
+  font-size: 14px;
+}
