@@ -9,8 +9,8 @@ const setup = (app) => {
   })
 }
 
-module.exports = (env) => {
-  if (!env.mock) {
+module.exports = (isMockAPI) => {
+  if (!isMockAPI) {
     return
   }
   return setup

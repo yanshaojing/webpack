@@ -6,7 +6,7 @@ module.exports = {
       success: true,
       'data|0-20': [{
         'id|+1': '@id',
-        title: '@ctile',
+        title: '@ctitle',
       }],
     }))
   },

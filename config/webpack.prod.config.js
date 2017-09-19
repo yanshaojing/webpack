@@ -1,10 +1,17 @@
+const webpack = require('webpack')
+const CleanWebpackPlugin = require('clean-webpack-plugin')
 const MinifyPlugin = require('babel-minify-webpack-plugin')
 const ExtractTextPlugin = require('extract-text-webpack-plugin')
-const baseConfigs = require('./webpack.base.config')
+const baseLoaders = require('./loaders/bases')
+const basePlugins = require('./plugins/bases')
+const based = require('./webpack.base.config')
+const config = require('./config')
+
+const PUBLIC_PATH = config.appStaticPath
+const STATIC_PATH = PUBLIC_PATH.replace(/\/$/, '')
 
 module.exports = () => {
-  const { plugins, module, ...otherConfigs } = baseConfigs
-  const getLoaderOptions = (isMinify = false) => {
+  const getLoaderOptions = (isMinify = true) => {
     return {
       modules: true,
       sourceMap: false,
@@ -14,17 +21,19 @@ module.exports = () => {
   }
 
   return {
-    ...otherConfigs,
+    ...based(PUBLIC_PATH),
+
+    /** modules */
     module: {
-      ...module,
-      rules: module.rules.concat([
+      rules: baseLoaders.concat([
         {
           test: /\.css$/,
+          include: config.appSrc,
           use: ExtractTextPlugin.extract({
             use: [
               {
                 loader: 'css-loader',
-                options: getLoaderOptions(true),
+                options: { minimize: true },
               },
             ],
             fallback: 'style-loader',
@@ -32,15 +41,16 @@ module.exports = () => {
         },
         {
           test: /\.less$/,
+          include: config.appSrc,
           use: ExtractTextPlugin.extract({
             use: [
               {
                 loader: 'css-loader',
-                options: getLoaderOptions(true),
+                options: getLoaderOptions(),
               },
               {
                 loader: 'less-loader',
-                options: getLoaderOptions(),
+                options: getLoaderOptions(false),
               },
             ],
             fallback: 'style-loader',
@@ -48,15 +58,16 @@ module.exports = () => {
         },
         {
           test: /\.scss$/,
+          include: config.appSrc,
           use: ExtractTextPlugin.extract({
             use: [
               {
                 loader: 'css-loader',
-                options: getLoaderOptions(true),
+                options: getLoaderOptions(),
               },
               {
                 loader: 'sass-loader',
-                options: getLoaderOptions(),
+                options: getLoaderOptions(false),
               },
             ],
             fallback: 'style-loader',
@@ -64,7 +75,21 @@ module.exports = () => {
         },
       ]),
     },
-    plugins: plugins.concat([
+
+    /** plugins */
+    plugins: basePlugins(STATIC_PATH).concat([
+      /**
+       * 打包之前清空上一次的打包信息
+       * https://github.com/johnagan/clean-webpack-plugin/
+       */
+      new CleanWebpackPlugin(['*'], {
+        root: config.appBuild,
+      }),
+      /**
+       * 提升作用域，优化代码执行速度
+       * https://webpack.js.org/plugins/module-concatenation-plugin/
+       */
+      new webpack.optimize.ModuleConcatenationPlugin(),
       /**
        * 样式分离
        * https://webpack.js.org/plugins/extract-text-webpack-plugin/
@@ -78,7 +103,10 @@ module.exports = () => {
        * 文件 Minify
        * https://webpack.js.org/plugins/babel-minify-webpack-plugin/
        */
-      new MinifyPlugin(),
+      new MinifyPlugin({
+        removeConsole: true,
+        removeDebugger: true,
+      }),
     ]),
   }
 }

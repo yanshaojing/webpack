@@ -1,12 +1,16 @@
-const path = require('path')
 const webpack = require('webpack')
-const baseConfigs = require('./webpack.base.config')
+const DashboardPlugin = require('webpack-dashboard/plugin')
+const mockAPI = require('./webpack.mock.config')
+const baseLoaders = require('./loaders/bases')
+const basePlugins = require('./plugins/bases')
+const based = require('./webpack.base.config')
+const config = require('./config')
+
+const PUBLIC_PATH = '/'
+const STATIC_PATH = ''
 
 module.exports = (env) => {
   const port = env.port || 8080
-  const setup = require('./webpack.mock.config')(env)
-  const HTML_PATH = path.join(__dirname, '../public')
-  const { plugins, module, ...otherConfigs } = baseConfigs
   const defaultOptions = {
     modules: true,
     sourceMap: true,
@@ -14,30 +18,36 @@ module.exports = (env) => {
   }
 
   return {
-    ...otherConfigs,
-    devtool: 'source-map', // devtool: 'source-map',
+    ...based(PUBLIC_PATH),
+    devtool: 'source-map',
+    watchOptions: {
+      ignored: /node_modules/,
+    },
     /**
      * 开发环境配置
      * https://webpack.js.org/configuration/dev-server/
      */
     devServer: {
       port,
-      setup,
       hot: true,
       noInfo: true,
       overlay: true,
       compress: true,
-      contentBase: HTML_PATH, // 入口 html 文件
+      setup: mockAPI(env.mock),
+      contentBase: config.appPublicDir,
     },
+
+    /** modules */
     module: {
-      ...module,
-      rules: module.rules.concat([
+      rules: baseLoaders.concat([
         {
           test: /\.css$/,
+          include: config.appSrc,
           use: ['style-loader', 'css-loader'],
         },
         {
           test: /\.less$/,
+          include: config.appSrc,
           use: [
             { loader: 'style-loader' },
             {
@@ -52,6 +62,7 @@ module.exports = (env) => {
         },
         {
           test: /\.scss$/,
+          include: config.appSrc,
           use: [
             { loader: 'style-loader' },
             {
@@ -66,12 +77,29 @@ module.exports = (env) => {
         },
       ]),
     },
-    plugins: plugins.concat([
+
+    /** plugins */
+    plugins: basePlugins(STATIC_PATH).concat([
       /**
        * 热替换
        * https://webpack.js.org/plugins/hot-module-replacement-plugin/
        */
       new webpack.HotModuleReplacementPlugin(),
+      /**
+       * 在控制台中输出模块名
+       * https://webpack.js.org/plugins/named-modules-plugin/
+       */
+      new webpack.NamedModulesPlugin(),
+      /**
+       * 避免发出包含错误的模块
+       * https://webpack.js.org/plugins/no-emit-on-errors-plugin/
+       */
+      new webpack.NoEmitOnErrorsPlugin(),
+      /**
+       * 输出日志可视化
+       * https://github.com/FormidableLabs/webpack-dashboard
+       */
+      new DashboardPlugin(),
     ]),
   }
 }
